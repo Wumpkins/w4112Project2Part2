@@ -1,3 +1,68 @@
 David Chen (dhc2129)
 
-This is the file for part 2 of the project. I have utilized the provided 
+This is the file for part 2 of the project. I have utilized the provided reference code in order to ensure accuracy of part 1, so that any errors we may have made in part 1 do not carry over to our implementation of part 2.
+
+The two methods specified are listed in the tree.c file, under probe_index_sse and hardcoded_index_sse, respectively. 
+
+The output of running the program (invoked by ./build K P <Fanout> ) will be a list of each probe, its position determined by part 1 (here, provided in the reference code), its position determined by part 2 non-hardcoded, and, if relevant, its position determined by part 2 hardcoded. 
+
+If you run a 9, 5, 9 tree, you will need to input probe amounts in multiples of 4, or there will be a seg fault that occurs (because we process the keys in groups of 4).
+
+
+Examples:
+
+$ ./build 400 12 9 5 9
+-2100375409 7 7 7
+-596975890 145 145 145
+-566763180 147 147 147
+2140429039 395 395 395
+-2035040165 11 11 11
+-956446963 119 119 119
+1537584264 327 327 327
+1574145259 329 329 329
+-458440168 158 158 158
+1786940120 358 358 358
+938289448 271 271 271
+528301376 241 241 241
+
+$ ./build 400 40 9 5 9
+-663892993 131 131 131
+-2121164923 5 5 5
+323187910 232 232 232
+-292072894 174 174 174
+-511087643 151 151 151
+-762414470 120 120 120
+1930423351 380 380 380
+-637644764 135 135 135
+1479771073 341 341 341
+-1250258705 84 84 84
+-1747561649 39 39 39
+1273715058 319 319 319
+1444828851 339 339 339
+-22691194 198 198 198
+-1248836242 85 85 85
+-264783427 175 175 175
+1716228128 364 364 364
+585887707 256 256 256
+1670232413 360 360 360
+-1324901396 78 78 78
+811509415 271 271 271
+1467616142 340 340 340
+-807967282 118 118 118
+441361948 244 244 244
+453911557 247 247 247
+92942962 209 209 209
+-919083271 111 111 111
+1097867826 301 301 301
+758083757 269 269 269
+-955436795 109 109 109
+-1262998804 83 83 83
+-374830445 167 167 167
+362969644 235 235 235
+353530308 234 234 234
+198836135 217 217 217
+740747723 268 268 268
+-1522010106 64 64 64
+1079457309 297 297 297
+-917809341 111 111 111
+-1341853466 77 77 77

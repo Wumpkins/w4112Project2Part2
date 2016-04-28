@@ -12,6 +12,7 @@
 #include <smmintrin.h>
 #include <nmmintrin.h> 
 #include <ammintrin.h>
+#include <immintrin.h>
 #include <x86intrin.h>
 
 
@@ -128,9 +129,7 @@ uint32_t probe_index_sse(Tree* tree, int32_t probe_key){
                         register __m128i cmp = _mm_cmpgt_epi32(lvl, key);
                         register __m128 cmp1 = _mm_castsi128_ps(cmp);
                         uint32_t tmp = _mm_movemask_ps(cmp1);
-                        if(tmp == 0)
-                                tmp = 16;
-                        tmp = _bit_scan_forward(tmp);
+                        tmp = _bit_scan_forward(tmp^0x10);
                         result = (result << 2) + result + tmp;
                 }
                 else if (tree->node_capacity[level] == 8){
@@ -143,9 +142,7 @@ uint32_t probe_index_sse(Tree* tree, int32_t probe_key){
                         cmp = _mm_packs_epi16(cmp, _mm_setzero_si128());
 
                         uint32_t tmp = _mm_movemask_epi8(cmp);
-                        if(tmp == 0)
-                                tmp = 256;
-                        tmp = _bit_scan_forward(tmp);
+                        tmp = _bit_scan_forward(tmp^0x100);
                         result = (result << 3) + result + tmp;
 
                 }
@@ -164,9 +161,7 @@ uint32_t probe_index_sse(Tree* tree, int32_t probe_key){
                         register __m128i cmp = _mm_packs_epi16(cmpab, cmpcd);
 
                         uint32_t tmp = _mm_movemask_epi8(cmp);
-                        if(tmp == 0)
-                                tmp = 65536;
-                        tmp = _bit_scan_forward(tmp);
+                        tmp = _bit_scan_forward(tmp^0x10000);
                         result = (result << 4) + result + tmp;                        
                 }
         }
@@ -174,8 +169,7 @@ uint32_t probe_index_sse(Tree* tree, int32_t probe_key){
         return result;
 }
 
-uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m128i root2, int32_t* probe_keys) {
-        uint32_t* result = malloc (sizeof(uint32_t) * 4);
+void hardcoded_index_sse(Tree* tree, register __m128i root1, register __m128i root2, int32_t* probe_keys, uint32_t* results) {
 
         register __m128i k = _mm_load_si128((__m128i*) probe_keys);
         register __m128i k1 = _mm_shuffle_epi32(k, _MM_SHUFFLE(0,0,0,0));
@@ -192,9 +186,7 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         cmp01 = _mm_packs_epi16(cmp01, _mm_setzero_si128());
 
         uint32_t r01 = _mm_movemask_epi8(cmp01);
-        if(r01 == 0)
-                r01 = 256;
-        r01 = _bit_scan_forward(r01);
+        r01 = _bit_scan_forward(r01^0x100);
 
         //2
         register __m128i cmp02a = _mm_cmpgt_epi32(root1, k2);
@@ -204,9 +196,7 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         cmp02 = _mm_packs_epi16(cmp02, _mm_setzero_si128());
 
         uint32_t r02 = _mm_movemask_epi8(cmp02);
-        if(r02 == 0)
-                r02 = 256;
-        r02 = _bit_scan_forward(r02);
+        r02 = _bit_scan_forward(r02^0x100);
 
         //3
         register __m128i cmp03a = _mm_cmpgt_epi32(root1, k3);
@@ -216,9 +206,7 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         cmp03 = _mm_packs_epi16(cmp03, _mm_setzero_si128());
 
         uint32_t r03 = _mm_movemask_epi8(cmp03);
-        if(r03 == 0)
-                r03 = 256;
-        r03 = _bit_scan_forward(r03);
+        r03 = _bit_scan_forward(r03^0x100);
 
         //4
         register __m128i cmp04a = _mm_cmpgt_epi32(root1, k4);
@@ -228,9 +216,7 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         cmp04 = _mm_packs_epi16(cmp04, _mm_setzero_si128());
 
         uint32_t r04 = _mm_movemask_epi8(cmp04);
-        if(r04 == 0)
-                r04 = 256;
-        r04 = _bit_scan_forward(r04);
+        r04 = _bit_scan_forward(r04^0x100);
 
 
         //fanout 5
@@ -241,9 +227,7 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         register __m128i cmp11 = _mm_cmpgt_epi32(lvl11, k1);
         register __m128 cmp11c = _mm_castsi128_ps(cmp11);
         uint32_t r11 = _mm_movemask_ps(cmp11c);
-        if(r11 == 0)
-                r11 = 16;
-        r11 = _bit_scan_forward(r11);
+        r11 = _bit_scan_forward(r11^0x10);
         r11 += (r01 << 2) + r01;
 
         //2
@@ -251,9 +235,7 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         register __m128i cmp12 = _mm_cmpgt_epi32(lvl12, k2);
         register __m128 cmp12c = _mm_castsi128_ps(cmp12);
         uint32_t r12 = _mm_movemask_ps(cmp12c);
-        if(r12 == 0)
-                r12 = 16;
-        r12 = _bit_scan_forward(r12);
+        r12 = _bit_scan_forward(r12^0x10);
         r12 += (r02 << 2) + r02;
 
         //3
@@ -261,9 +243,7 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         register __m128i cmp13 = _mm_cmpgt_epi32(lvl13, k3);
         register __m128 cmp13c = _mm_castsi128_ps(cmp13);
         uint32_t r13 = _mm_movemask_ps(cmp13c);
-        if(r13 == 0)
-                r13 = 16;
-        r13 = _bit_scan_forward(r13);
+        r13 = _bit_scan_forward(r13^0x10);
         r13 += (r03 << 2) + r03;
 
         //4
@@ -271,9 +251,7 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         register __m128i cmp14 = _mm_cmpgt_epi32(lvl14, k4);
         register __m128 cmp14c = _mm_castsi128_ps(cmp14);
         uint32_t r14 = _mm_movemask_ps(cmp14c);
-        if(r14 == 0)
-                r14 = 16;
-        r14 = _bit_scan_forward(r14);
+        r14 = _bit_scan_forward(r14^0x10);
         r14 += (r04 << 2) + r04;
 
 
@@ -290,11 +268,9 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         cmp21 = _mm_packs_epi16(cmp21, _mm_setzero_si128());
 
         uint32_t r21 = _mm_movemask_epi8(cmp21);
-        if(r21 == 0)
-                r21 = 256;
-        r21 = _bit_scan_forward(r21);
+        r21 = _bit_scan_forward(r21^0x100);
         r21 += (r11 << 3) + r11;
-        result[0] = r21;
+        results[0] = r21;
 
         //2
         register __m128i lvl22a = _mm_load_si128((__m128i*)&index2[ r12 << 3 ]);
@@ -306,11 +282,9 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         cmp22 = _mm_packs_epi16(cmp22, _mm_setzero_si128());
 
         uint32_t r22 = _mm_movemask_epi8(cmp22);
-        if(r22 == 0)
-                r22 = 256;
-        r22 = _bit_scan_forward(r22);
+        r22 = _bit_scan_forward(r22^0x100);
         r22 += (r12 << 3) + r12;
-        result[1] = r22;
+        results[1] = r22;
 
         //3
         register __m128i lvl23a = _mm_load_si128((__m128i*)&index2[ r13 << 3 ]);
@@ -322,11 +296,9 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         cmp23 = _mm_packs_epi16(cmp23, _mm_setzero_si128());
 
         uint32_t r23 = _mm_movemask_epi8(cmp23);
-        if(r23 == 0)
-                r23 = 256;
-        r23 = _bit_scan_forward(r23);
+        r23 = _bit_scan_forward(r23^0x100);
         r23 += (r13 << 3) + r13;
-        result[2] = r23;
+        results[2] = r23;
 
         //4
         register __m128i lvl24a = _mm_load_si128((__m128i*)&index2[ r14 << 3 ]);
@@ -338,13 +310,10 @@ uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m12
         cmp24 = _mm_packs_epi16(cmp24, _mm_setzero_si128());
 
         uint32_t r24 = _mm_movemask_epi8(cmp24);
-        if(r24 == 0)
-                r24 = 256;
-        r24 = _bit_scan_forward(r24);
+        r24 = _bit_scan_forward(r24^0x100);
         r24 += (r14 << 3) + r14;
-        result[3] = r24;
+        results[3] = r24;
 
-        return result;
 }
 
 void cleanup_index(Tree* tree) {

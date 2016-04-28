@@ -11,6 +11,7 @@
 #include <smmintrin.h>
 #include <nmmintrin.h> 
 #include <ammintrin.h>
+#include <immintrin.h>
 #include <x86intrin.h>
 
 
@@ -23,7 +24,7 @@ typedef struct {
 Tree* build_index(size_t num_levels, size_t fanout[], size_t num_keys, int32_t key[]);
 uint32_t probe_index(Tree* tree, int32_t probe_key);
 uint32_t probe_index_sse(Tree* tree, int32_t probe_key);
-uint32_t* hardcoded_index_sse(Tree* tree, register __m128i root1, register __m128i root2, int32_t* probe_keys);
+void hardcoded_index_sse(Tree* tree, register __m128i root1, register __m128i root2, int32_t* probe_keys, uint32_t* results);
 void cleanup_index(Tree* tree);
 
 #endif

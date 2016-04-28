@@ -11,6 +11,7 @@
 #include <smmintrin.h>
 #include <nmmintrin.h> 
 #include <ammintrin.h>
+#include <immintrin.h>
 #include <x86intrin.h>
 
 #include "p2random.h"
@@ -60,31 +61,37 @@ int main(int argc, char* argv[]) {
         assert(result3 != NULL);
 
         // perform index probing (Phase 2)
+
+        clock_t start1 = clock(), diff1;
         for (size_t i = 0; i < num_probes; ++i) {
                 result[i] = probe_index(tree, probe[i]);
         }
+        diff1 = clock() - start1;
+        int time1 = diff1 * 1000 / CLOCKS_PER_SEC;
 
+        clock_t start2 = clock(), diff2;
         //probing with SSE
         for(size_t i = 0; i < num_probes; ++i){
                 result2[i] = probe_index_sse(tree, probe[i]);
         }
+        diff2 = clock() - start2;
+        int time2 = diff2 * 1000 / CLOCKS_PER_SEC;
 
         //probing with SSE hardcoded
         //explicit loading root node
+        clock_t start3, diff3;
         if (useHardCoded){
+                start3 = clock();
                 int32_t* index = tree->key_array[0];
                 register __m128i root1 = _mm_load_si128((__m128i*)&index[ 0 ]);
                 register __m128i root2 = _mm_load_si128((__m128i*)&index[ 4 ]);
                 for (size_t i = 0; i < num_probes; i=i+4) {
-                        uint32_t* tmp = hardcoded_index_sse(tree, root1, root2, &probe[i]);
-                        result3[i] = tmp[0];
-                        result3[i+1] = tmp[1];
-                        result3[i+2] = tmp[2];
-                        result3[i+3] = tmp[3];
-                        free(tmp);
+                        hardcoded_index_sse(tree, root1, root2, &probe[i], &result3[i]);
                 }
+                diff3 = clock() - start3;
         }
-
+        diff3 = clock() - start3;
+        int time3 = diff3 * 1000 / CLOCKS_PER_SEC;
 
         // output results
         if(useHardCoded){
@@ -97,6 +104,9 @@ int main(int argc, char* argv[]) {
                         fprintf(stdout, "%d %u %u\n", probe[i], result[i], result2[i]);
                 }
         }
+
+        //output clock results
+        fprintf(stderr, "%d %d %d\n", time1, time2, time3);
 
         // cleanup and exit
         free(result);
