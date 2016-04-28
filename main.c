@@ -29,6 +29,10 @@ int main(int argc, char* argv[]) {
                 assert(fanout[i] >= 2 && fanout[i] <= 17);
         }
 
+        int useHardCoded = 0;
+        if(num_levels == 3 && fanout[0] == 9 && fanout[1] == 5 && fanout[2] == 9)
+                useHardCoded = 1;
+
         // building the tree index
         rand32_t* gen = rand32_init((uint32_t) time(NULL));
         assert(gen != NULL);
@@ -67,26 +71,37 @@ int main(int argc, char* argv[]) {
 
         //probing with SSE hardcoded
         //explicit loading root node
-        int32_t* index = tree->key_array[0];
-        register __m128i root1 = _mm_load_si128((__m128i*)&index[ 0 ]);
-        register __m128i root2 = _mm_load_si128((__m128i*)&index[ 4 ]);
-        for (size_t i = 0; i < num_probes; i=i+4) {
-                uint32_t* tmp = hardcoded_index_sse(tree, root1, root2, &probe[i]);
-                result3[i] = tmp[0];
-                result3[i+1] = tmp[1];
-                result3[i+2] = tmp[2];
-                result3[i+3] = tmp[3];
-                free(tmp);
+        if (useHardCoded){
+                int32_t* index = tree->key_array[0];
+                register __m128i root1 = _mm_load_si128((__m128i*)&index[ 0 ]);
+                register __m128i root2 = _mm_load_si128((__m128i*)&index[ 4 ]);
+                for (size_t i = 0; i < num_probes; i=i+4) {
+                        uint32_t* tmp = hardcoded_index_sse(tree, root1, root2, &probe[i]);
+                        result3[i] = tmp[0];
+                        result3[i+1] = tmp[1];
+                        result3[i+2] = tmp[2];
+                        result3[i+3] = tmp[3];
+                        free(tmp);
+                }
         }
 
 
         // output results
-        for (size_t i = 0; i < num_probes; ++i) {
-                fprintf(stdout, "%d %u %u %u\n", probe[i], result[i], result2[i], result3[i]);
+        if(useHardCoded){
+                for (size_t i = 0; i < num_probes; ++i) {
+                        fprintf(stdout, "%d %u %u %u\n", probe[i], result[i], result2[i], result3[i]);
+                }
+        }
+        else{
+                for (size_t i = 0; i < num_probes; ++i) {
+                        fprintf(stdout, "%d %u %u\n", probe[i], result[i], result2[i]);
+                }
         }
 
         // cleanup and exit
         free(result);
+        free(result2);
+        free(result3);
         free(probe);
         cleanup_index(tree);
         return EXIT_SUCCESS;
