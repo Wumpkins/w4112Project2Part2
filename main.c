@@ -40,14 +40,22 @@ int main(int argc, char* argv[]) {
         uint32_t* result = malloc(sizeof(uint32_t) * num_probes);
         assert(result != NULL);
 
+        uint32_t* result2 = malloc(sizeof(uint32_t) * num_probes);
+        assert(result2 != NULL);
+
         // perform index probing (Phase 2)
         for (size_t i = 0; i < num_probes; ++i) {
                 result[i] = probe_index(tree, probe[i]);
         }
 
+        //probing with SSE
+        for(size_t i = 0; i < num_probes; ++i){
+                result2[i] = probe_index_sse(tree, probe[i]);
+        }
+
         // output results
         for (size_t i = 0; i < num_probes; ++i) {
-                fprintf(stdout, "%d %u\n", probe[i], result[i]);
+                fprintf(stdout, "%d %u %u\n", probe[i], result[i], result2[i]);
         }
 
         // cleanup and exit

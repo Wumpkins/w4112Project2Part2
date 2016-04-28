@@ -5,6 +5,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <xmmintrin.h> 
+#include <emmintrin.h>  
+#include <pmmintrin.h> 
+#include <tmmintrin.h> 
+#include <smmintrin.h>
+#include <nmmintrin.h> 
+#include <ammintrin.h>
+#include <x86intrin.h>
+
 
 extern int posix_memalign(void** memptr, size_t alignment, size_t size);
 size_t alignment = 16;
@@ -105,6 +114,67 @@ uint32_t probe_index(Tree* tree, int32_t probe_key) {
                 result = result * (tree->node_capacity[level] + 1) + k;
         }
         return (uint32_t) result;
+}
+
+uint32_t probe_index_sse(Tree* tree, int32_t probe_key) {
+        uint32_t result = 0;
+        register __m128i key = _mm_cvtsi32_si128(probe_key);
+        key = _mm_shuffle_epi32(key, _MM_SHUFFLE(0,0,0,0));
+
+        for (size_t level = 0; level < tree->num_levels; ++level){
+                int32_t* index = tree->key_array[level];
+                if(tree->node_capacity[level] == 4){
+                        register __m128i lvl = _mm_load_si128((__m128i*)&index[ result << 2 ]);
+                        register __m128i cmp = _mm_cmpgt_epi32(lvl, key);
+                        register __m128 cmp1 = _mm_castsi128_ps(cmp);
+                        uint32_t tmp = _mm_movemask_ps(cmp1);
+                        if(tmp == 0)
+                                tmp = 16;
+                        tmp = _bit_scan_forward(tmp);
+                        result = (result << 2) + result + tmp;
+                }
+                else if (tree->node_capacity[level] == 8){
+                        register __m128i lvla = _mm_load_si128((__m128i*)&index[ result << 3 ]);
+                        register __m128i lvlb = _mm_load_si128((__m128i*)&index[ (result << 3) + 4]);
+                        register __m128i cmpa = _mm_cmpgt_epi32(lvla, key);
+                        register __m128i cmpb = _mm_cmpgt_epi32(lvlb, key);
+
+                        
+                        register __m128 cmp1a = _mm_castsi128_ps(cmpa);
+                        register __m128 cmp1b = _mm_castsi128_ps(cmpb); 
+                        uint32_t tmpa = _mm_movemask_ps(cmp1a); 
+                        if(tmpa == 0)
+                                tmpa = 16;
+                        tmpa = _bit_scan_forward(tmpa);
+                        uint32_t tmpb = _mm_movemask_ps(cmp1b); 
+                        if(tmpb == 0)
+                                tmpb = 16;      
+                        tmpb = _bit_scan_forward(tmpb);                       
+
+                        result = (result << 3) + result + tmpa + tmpb;
+                }
+                else if (tree->node_capacity[level] == 16){
+
+                }
+        }
+
+        return result;
+
+        // // access level 2 of the index (9-way)
+        // lvl_2_A = _mm_load_si128(&index_L2[ r_1 << 3]);
+        // lvl_2_B = _mm_load_si128(&index_L2[(r_1 << 3) + 4]);
+        // cmp_2_A = _mm_cmpge_ps(lvl_2_A, key);
+        // cmp_2_B = _mm_cmpge_ps(lvl_2_B, key);
+        // cmp_2 = _mm_packs_epi32(cmp_2_A, cmp_2_B);
+        // cmp_2 = _mm_packs_epi16(cmp_2, _mm_setzero_si128());
+        // r_2 = _mm_movemask_epi8(cmp_2);
+        // r_2 = _bit_scan_forward(r_2 ^ 0x1FFFF);
+        // r_2 += (r_1 << 3) + r_1;
+
+}
+
+uint32_t hardcoded_index_sse(Tree* tree, int32_t probe_key) {
+
 }
 
 void cleanup_index(Tree* tree) {
