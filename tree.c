@@ -150,23 +150,28 @@ uint32_t probe_index_sse(Tree* tree, int32_t probe_key) {
 
                 }
                 else if (tree->node_capacity[level] == 16){
+                        register __m128i lvla = _mm_load_si128((__m128i*)&index[ result << 4 ]);
+                        register __m128i lvlb = _mm_load_si128((__m128i*)&index[ (result << 4) + 4]);
+                        register __m128i lvlc = _mm_load_si128((__m128i*)&index[ (result << 4) + 8 ]);
+                        register __m128i lvld = _mm_load_si128((__m128i*)&index[ (result << 4) + 12]);
+                        register __m128i cmpa = _mm_cmpgt_epi32(lvla, key);
+                        register __m128i cmpb = _mm_cmpgt_epi32(lvlb, key);
+                        register __m128i cmpc = _mm_cmpgt_epi32(lvlc, key);
+                        register __m128i cmpd = _mm_cmpgt_epi32(lvld, key);
 
+                        register __m128i cmpab = _mm_packs_epi32(cmpa, cmpb);
+                        register __m128i cmpcd = _mm_packs_epi32(cmpc, cmpd);
+                        register __m128i cmp = _mm_packs_epi16(cmpab, cmpcd);
+
+                        uint32_t tmp = _mm_movemask_epi8(cmp);
+                        if(tmp == 0)
+                                tmp = 65536;
+                        tmp = _bit_scan_forward(tmp);
+                        result = (result << 4) + result + tmp;                        
                 }
         }
 
         return result;
-
-        // // access level 2 of the index (9-way)
-        // lvl_2_A = _mm_load_si128(&index_L2[ r_1 << 3]);
-        // lvl_2_B = _mm_load_si128(&index_L2[(r_1 << 3) + 4]);
-        // cmp_2_A = _mm_cmpge_ps(lvl_2_A, key);
-        // cmp_2_B = _mm_cmpge_ps(lvl_2_B, key);
-        // cmp_2 = _mm_packs_epi32(cmp_2_A, cmp_2_B);
-        // cmp_2 = _mm_packs_epi16(cmp_2, _mm_setzero_si128());
-        // r_2 = _mm_movemask_epi8(cmp_2);
-        // r_2 = _bit_scan_forward(r_2 ^ 0x1FFFF);
-        // r_2 += (r_1 << 3) + r_1;
-
 }
 
 uint32_t hardcoded_index_sse(Tree* tree, int32_t probe_key) {
