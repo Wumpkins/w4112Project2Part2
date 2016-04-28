@@ -139,19 +139,15 @@ uint32_t probe_index_sse(Tree* tree, int32_t probe_key) {
                         register __m128i cmpa = _mm_cmpgt_epi32(lvla, key);
                         register __m128i cmpb = _mm_cmpgt_epi32(lvlb, key);
 
-                        
-                        register __m128 cmp1a = _mm_castsi128_ps(cmpa);
-                        register __m128 cmp1b = _mm_castsi128_ps(cmpb); 
-                        uint32_t tmpa = _mm_movemask_ps(cmp1a); 
-                        if(tmpa == 0)
-                                tmpa = 16;
-                        tmpa = _bit_scan_forward(tmpa);
-                        uint32_t tmpb = _mm_movemask_ps(cmp1b); 
-                        if(tmpb == 0)
-                                tmpb = 16;      
-                        tmpb = _bit_scan_forward(tmpb);                       
+                        register __m128i cmp = _mm_packs_epi32(cmpa, cmpb);
+                        cmp = _mm_packs_epi16(cmp, _mm_setzero_si128());
 
-                        result = (result << 3) + result + tmpa + tmpb;
+                        uint32_t tmp = _mm_movemask_epi8(cmp);
+                        if(tmp == 0)
+                                tmp = 256;
+                        tmp = _bit_scan_forward(tmp);
+                        result = (result << 3) + result + tmp;
+
                 }
                 else if (tree->node_capacity[level] == 16){
 
